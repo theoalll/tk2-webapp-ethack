@@ -208,8 +208,8 @@ async function main() {
     data: {
       code: "CSCTF999",
       name: "Seminar Khusus Keamanan Nasional",
-      credits: 6,
-      lecturer: "Dr. ████████ ██████████, S.T., M.T.",
+      credits: 24,
+      lecturer: "-",
       schedule: "Jadwal Diklasifikasikan",
       description:
         "[AKSES TERBATAS] Mata kuliah ini merupakan seminar khusus yang membahas topik-topik keamanan nasional dan siber. Hanya mahasiswa yang terdaftar yang dapat mengakses detail perkuliahan.",
@@ -234,7 +234,7 @@ async function main() {
   console.log("Asisten Dosen: asdos@student.ui.ac.id / password123");
   console.log("Admin: admin@siak.ui.ac.id / password123");
   console.log("\nMahasiswa initial enrollment: 18 SKS (includes MK000 - Olahraga Prestasi 6 SKS)");
-  console.log(`Hidden course flag: ${flag}`);
+  console.log(`Hidden course (24 SKS) flag: ${flag}`);
 }
 
 main()

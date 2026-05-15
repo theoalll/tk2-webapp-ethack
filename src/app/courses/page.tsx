@@ -207,7 +207,7 @@ function CourseCard({
       {course.isHidden && (
         <div className="absolute right-3 top-3">
           <span className="rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-700">
-            RESTRICTED
+            OVERLOAD REQUIRED
           </span>
         </div>
       )}
@@ -250,6 +250,10 @@ function CourseCard({
           >
             {adding ? "Memproses..." : "Drop"}
           </button>
+        ) : course.isHidden ? (
+          <span className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-600">
+            Cannot enroll this course
+          </span>
         ) : (
           <button
             onClick={() => onAdd(course)}

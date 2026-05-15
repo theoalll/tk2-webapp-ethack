@@ -33,6 +33,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "IRS sudah disubmit. Tidak dapat menambahkan mata kuliah." }, { status: 409 });
   }
 
+  if (course.isHidden) {
+    const userRecord = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { hasOverloaded: true },
+    });
+
+    if (!userRecord?.hasOverloaded) {
+      return NextResponse.json(
+        {
+          error:
+            "Mata kuliah ini hanya dapat didaftarkan melalui mekanisme overloading SKS. "
+        },
+        { status: 400 }
+      );
+    }
+
+    await prisma.enrollment.create({
+      data: { userId: user.id, courseId, status: "ENROLLED" },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Berhasil menambahkan ${course.code} - ${course.name}`,
+      currentSKS: null,
+      maxSKS: computeMaxSKS(user.gpa),
+    });
+  }
+
   const maxSKS = computeMaxSKS(user.gpa);
 
   const currentEnrollments = await prisma.enrollment.findMany({

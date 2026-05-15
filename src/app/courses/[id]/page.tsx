@@ -178,9 +178,12 @@ export default function CourseDetailPage() {
 
           {course.isHidden && !course.isEnrolled && (
             <div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-6">
-              <p className="text-sm font-medium text-red-700">
-                Anda tidak terdaftar pada mata kuliah ini. Silakan daftar melalui
-                katalog mata kuliah.
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-red-700">
+                Akses Dibatasi
+              </h2>
+              <p className="mt-2 text-sm text-red-700">
+                Mata kuliah ini memiliki bobot 24 SKS dan tidak dapat didaftarkan
+                secara langsung.
               </p>
             </div>
           )}

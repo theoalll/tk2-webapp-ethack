@@ -109,15 +109,20 @@ npm start
 | Nama | Budi Santoso |
 | NIM | 2106751234 |
 | IP Semester | 3.78 |
-| SKS Saat Ini | 18 (dari 5 mata kuliah) |
+| SKS Saat Ini | 18 (dari 5 mata kuliah, termasuk MK000 6 SKS) |
 | Maksimal SKS | 24 (IP >= 3.5) |
-| Mata Kuliah Dummy | MK000 - Olahraga Prestasi (6 SKS) |
+| Mata Kuliah Dummy | MK000 - Olahraga Prestasi (6 SKS, dapat di-drop) |
+| Mata Kuliah Hidden | CSCTF999 - Seminar Khusus Keamanan Nasional (24 SKS) |
 
 ## Important Notes
 
 - **Vulnerability:** Endpoint `/api/irs/add` memiliki race condition pada pengecekan batas SKS
-- **Intended Exploit:** Parallel requests untuk bypass batas SKS, lalu drop mata kuliah dummy
-- **Flag Location:** Mata kuliah CSCTF999 - Seminar Khusus Keamanan Nasional (setelah berhasil registrasi)
+- **Intended Exploit:** Parallel requests untuk bypass batas SKS → trigger flag `hasOverloaded` → daftar CSCTF999
+- **Flag Location:** Mata kuliah CSCTF999 - Seminar Khusus Keamanan Nasional (24 SKS)
+- **CSCTF999 tidak bisa didaftarkan secara langsung** karena bobot 24 SKS melebihi sisa kuota
+- **Dua langkah exploit:**
+  1. Concurrent request terhadap 2+ mata kuliah biasa untuk memicu overload SKS
+  2. Setelah `hasOverloaded` aktif, daftarkan CSCTF999
 - **Frontend Protection:** Tombol "Tambah" dinonaktifkan ketika SKS mencapai batas, namun ini hanya proteksi client-side
 - **Backend Vulnerability:** Pengecekan dan insert SKS tidak atomic (tidak menggunakan transaksi/locking)
 
