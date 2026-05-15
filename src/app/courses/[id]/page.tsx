@@ -165,25 +165,18 @@ export default function CourseDetailPage() {
           {course.isHidden && course.isEnrolled && !course.hasOverloaded && (
             <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-6">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-700">
-                Persyaratan Belum Terpenuhi
+                Akses Terbatas
               </h2>
               <p className="mt-2 text-sm text-amber-700">
-                Mata kuliah ini memerlukan mekanisme pendaftaran khusus. 
-                Sistem mendeteksi bahwa Anda belum melalui proses overloading SKS.
-                Gunakan teknik concurrent request untuk mendaftar pada mata kuliah ini
-                bersama dengan mata kuliah lain dalam waktu bersamaan.
+                Anda belum memenuhi persyaratan untuk mengakses mata kuliah ini.
               </p>
             </div>
           )}
 
           {course.isHidden && !course.isEnrolled && (
             <div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-6">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-red-700">
-                Akses Dibatasi
-              </h2>
-              <p className="mt-2 text-sm text-red-700">
-                Mata kuliah ini memiliki bobot 24 SKS dan tidak dapat didaftarkan
-                secara langsung.
+              <p className="text-sm font-medium text-red-700">
+                Anda belum bisa mengambil mata kuliah ini.
               </p>
             </div>
           )}

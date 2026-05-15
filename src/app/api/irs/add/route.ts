@@ -41,10 +41,7 @@ export async function POST(request: Request) {
 
     if (!userRecord?.hasOverloaded) {
       return NextResponse.json(
-        {
-          error:
-            "Mata kuliah ini hanya dapat didaftarkan melalui mekanisme overloading SKS. "
-        },
+        { error: "Anda belum bisa mengambil mata kuliah ini" },
         { status: 400 }
       );
     }

@@ -250,6 +250,10 @@ function CourseCard({
           >
             {adding ? "Memproses..." : "Drop"}
           </button>
+        ) : course.isHidden ? (
+          <span className="flex-1 cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-center text-sm font-medium text-gray-400">
+            Belum bisa diambil
+          </span>
         ) : (
           <button
             onClick={() => onAdd(course)}
