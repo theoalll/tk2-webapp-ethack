@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: siak
+      POSTGRES_PASSWORD: siak_password
+      POSTGRES_DB: siak_ng
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siak -d siak_ng"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://siak:siak_password@db:5432/siak_ng"
+      JWT_SECRET: "${JWT_SECRET:-change_me_in_production_use_a_long_random_string}"
+      FLAG: "${FLAG:-CTF{race_condition_in_academic_workflow}}"
+      NEXTAUTH_URL: "http://localhost:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
