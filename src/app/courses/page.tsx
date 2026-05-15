@@ -207,7 +207,7 @@ function CourseCard({
       {course.isHidden && (
         <div className="absolute right-3 top-3">
           <span className="rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-700">
-            OVERLOAD REQUIRED
+            CLASSIFIED
           </span>
         </div>
       )}
