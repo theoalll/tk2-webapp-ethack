@@ -103,31 +103,9 @@ CSCTF999 (24 SKS): check hasOverloaded → true → SKIP SKS check → enrolled!
 SKS setelah CSCTF999: 49/24
 ```
 
-### Step 5: Drop Mata Kuliah Dummy
-
-Hapus MK000 - Olahraga Prestasi (6 SKS) melalui endpoint `/api/irs/drop` untuk mengurangi SKS.
-
-```
-SKS sebelum drop: 49
-Drop MK000 (6 SKS)
-SKS setelah drop: 43
-```
-
-### Step 6: Submit IRS
-
-Submit IRS melalui endpoint `/api/irs/submit`.
-
-```
-Cek: 43 > 24 → REJECTED
-```
-
-Anda masih kelebihan SKS karena CSCTF999 sangat besar. Pada challenge ini, **flag sudah bisa diakses tanpa submit IRS**, karena flag ditampilkan pada halaman detail course ketika syarat terpenuhi.
-
-### Step 7: Akses Hidden Course
+### Step 5: Akses Hidden Course
 
 Buka halaman detail CSCTF999 di `/courses/{course-id}`.
-
-### Step 8: Dapatkan Flag
 
 Flag akan ditampilkan jika:
 1. User terdaftar di CSCTF999 ✓
@@ -139,7 +117,7 @@ Flag akan ditampilkan jika:
 
 ### 1. Login dan Capture Request
 
-1. Buka Burp Suite dan konfigurasi proxy (127.0.0.1:8080)
+1. Buka Burp Suite
 2. Login ke aplikasi melalui browser dengan proxy Burp
 3. Temukan request dan kirim ke Repeater
 

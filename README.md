@@ -54,12 +54,24 @@ Tujuan challenge ini adalah mengeksploitasi **race condition** pada endpoint pen
 - PostgreSQL 16+
 - npm atau yarn
 
+### Docker Deployment
+
+```bash
+git clone https://github.com/theoalll/tk2-webapp-ethack.git
+cd tk2-webapp-ethack
+
+# Build dan jalankan dengan Docker Compose
+docker compose up --build -d
+```
+
+Aplikasi akan berjalan di `http://localhost:3000`.
+
 ### Local Development
 
 ```bash
 # Clone repository
 git clone https://github.com/theoalll/tk2-webapp-ethack.git
-cd tk2
+cd tk2-webapp-ethack
 
 # Install dependencies
 npm install
@@ -78,14 +90,6 @@ npm run dev
 
 Aplikasi akan berjalan di `http://localhost:3000`.
 
-### Docker Deployment
-
-```bash
-# Build dan jalankan dengan Docker Compose
-docker compose up --build -d
-```
-
-Aplikasi akan berjalan di `http://localhost:3000`.
 
 ### Manual Build & Start
 
@@ -113,18 +117,6 @@ npm start
 | Maksimal SKS | 24 (IP >= 3.5) |
 | Mata Kuliah Dummy | MK000 - Olahraga Prestasi (6 SKS, dapat di-drop) |
 | Mata Kuliah Hidden | CSCTF999 - Seminar Khusus Keamanan Nasional (24 SKS) |
-
-## Important Notes
-
-- **Vulnerability:** Endpoint `/api/irs/add` memiliki race condition pada pengecekan batas SKS
-- **Intended Exploit:** Parallel requests untuk bypass batas SKS → trigger flag `hasOverloaded` → daftar CSCTF999
-- **Flag Location:** Mata kuliah CSCTF999 - Seminar Khusus Keamanan Nasional (24 SKS)
-- **CSCTF999 tidak bisa didaftarkan secara langsung** karena bobot 24 SKS melebihi sisa kuota
-- **Dua langkah exploit:**
-  1. Concurrent request terhadap 2+ mata kuliah biasa untuk memicu overload SKS
-  2. Setelah `hasOverloaded` aktif, daftarkan CSCTF999
-- **Frontend Protection:** Tombol "Tambah" dinonaktifkan ketika SKS mencapai batas, namun ini hanya proteksi client-side
-- **Backend Vulnerability:** Pengecekan dan insert SKS tidak atomic (tidak menggunakan transaksi/locking)
 
 ## Production Deployment
 
