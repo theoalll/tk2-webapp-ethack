@@ -52,11 +52,23 @@ export async function POST(request: Request) {
     data: { userId: user.id, courseId, status: "ENROLLED" },
   });
 
-  const newTotal = currentSKS + course.credits;
+  const updatedEnrollments = await prisma.enrollment.findMany({
+    where: { userId: user.id, status: "ENROLLED" },
+    include: { course: true },
+  });
+  const actualTotal = updatedEnrollments.reduce((sum, e) => sum + e.course.credits, 0);
+
+  if (actualTotal > maxSKS) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { hasOverloaded: true },
+    });
+  }
+
   return NextResponse.json({
     success: true,
     message: `Berhasil menambahkan ${course.code} - ${course.name}`,
-    currentSKS: newTotal,
+    currentSKS: actualTotal,
     maxSKS,
   });
 }

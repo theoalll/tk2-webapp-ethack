@@ -19,6 +19,7 @@ interface CourseDetail {
   flag?: string;
   isEnrolled: boolean;
   enrollmentStatus: string | null;
+  hasOverloaded: boolean;
 }
 
 interface UserData {
@@ -147,7 +148,7 @@ export default function CourseDetailPage() {
             </p>
           </div>
 
-          {course.isHidden && course.isEnrolled && course.flag && (
+          {course.isHidden && course.isEnrolled && course.hasOverloaded && course.flag && (
             <div className="mt-8 rounded-lg border border-emerald-200 bg-emerald-50 p-6">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-emerald-700">
                 Flag / Credential
@@ -156,7 +157,21 @@ export default function CourseDetailPage() {
                 {course.flag}
               </p>
               <p className="mt-2 text-xs text-emerald-600">
-                Selamat! Anda berhasil mengakses mata kuliah ini.
+                Selamat! Anda berhasil mengakses mata kuliah ini melalui mekanisme overloading SKS.
+              </p>
+            </div>
+          )}
+
+          {course.isHidden && course.isEnrolled && !course.hasOverloaded && (
+            <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-6">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-700">
+                Persyaratan Belum Terpenuhi
+              </h2>
+              <p className="mt-2 text-sm text-amber-700">
+                Mata kuliah ini memerlukan mekanisme pendaftaran khusus. 
+                Sistem mendeteksi bahwa Anda belum melalui proses overloading SKS.
+                Gunakan teknik concurrent request untuk mendaftar pada mata kuliah ini
+                bersama dengan mata kuliah lain dalam waktu bersamaan.
               </p>
             </div>
           )}

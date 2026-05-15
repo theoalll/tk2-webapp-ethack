@@ -31,11 +31,19 @@ export async function GET(
     );
   }
 
+  const fullUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { hasOverloaded: true },
+  });
+
+  const canSeeFlag = course.isHidden && isEnrolled && fullUser?.hasOverloaded === true;
+
   const courseData = {
     ...course,
-    flag: course.isHidden && isEnrolled ? course.flag : undefined,
+    flag: canSeeFlag ? course.flag : undefined,
     isEnrolled,
     enrollmentStatus: enrollment?.status || null,
+    hasOverloaded: fullUser?.hasOverloaded || false,
   };
 
   return NextResponse.json(courseData);

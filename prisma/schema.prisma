@@ -25,9 +25,10 @@ model User {
   name      String
   nim       String   @unique
   gpa       Float    @default(0.0)
-  role      Role     @default(STUDENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role          Role     @default(STUDENT)
+  hasOverloaded Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   enrollments Enrollment[]
 }
