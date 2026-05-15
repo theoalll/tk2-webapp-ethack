@@ -7,9 +7,10 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-COPY . .
-
+COPY prisma/ ./prisma/
 RUN npx prisma generate
+
+COPY . .
 RUN npm run build
 
 EXPOSE 3000
