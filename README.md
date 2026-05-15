@@ -58,7 +58,7 @@ Tujuan challenge ini adalah mengeksploitasi **race condition** pada endpoint pen
 
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone https://github.com/theoalll/tk2-webapp-ethack.git
 cd tk2
 
 # Install dependencies
