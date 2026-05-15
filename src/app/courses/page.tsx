@@ -250,10 +250,6 @@ function CourseCard({
           >
             {adding ? "Memproses..." : "Drop"}
           </button>
-        ) : course.isHidden ? (
-          <span className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-600">
-            Cannot enroll this course
-          </span>
         ) : (
           <button
             onClick={() => onAdd(course)}
